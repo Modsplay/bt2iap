@@ -11,7 +11,7 @@
 # Usage:
 #   sudo /opt/bt2iap/scripts/bootstrap.sh
 #
-# Idempotent: safe to re-run. Existing checkouts are git-pulled; the .ko
+# Idempotent: safe to re-run. Bundled source snapshots are retained; the .ko
 # modules and Go binary are rebuilt only if missing; /boot patches and
 # systemd units are sentinel-guarded.
 # =============================================================================
@@ -97,15 +97,7 @@ apt install -y \
 log "ensure ${VENDOR_DIR}"
 install -d -m 0755 "${VENDOR_DIR}"
 
-## === ipod-gadget: clone or pull ===
-
-if [[ -d "${IPOD_GADGET_DIR}/.git" ]]; then
-  log "ipod-gadget: git pull (existing checkout)"
-  git -C "${IPOD_GADGET_DIR}" pull --ff-only
-else
-  log "ipod-gadget: cloning"
-  git clone "${IPOD_GADGET_REPO}" "${IPOD_GADGET_DIR}"
-fi
+# Use the bundled source snapshot, including local protocol changes.
 
 ## === ipod-gadget: build kernel modules if any .ko missing ===
 
@@ -122,16 +114,6 @@ if [[ ${need_build} -eq 1 ]]; then
   make -C "${IPOD_GADGET_DIR}/gadget"
 else
   log "ipod-gadget: all .ko present, skip make"
-fi
-
-## === ipod (Go client): clone or pull ===
-
-if [[ -d "${IPOD_CLIENT_DIR}/.git" ]]; then
-  log "ipod client: git pull (existing checkout)"
-  git -C "${IPOD_CLIENT_DIR}" pull --ff-only
-else
-  log "ipod client: cloning"
-  git clone "${IPOD_CLIENT_REPO}" "${IPOD_CLIENT_DIR}"
 fi
 
 ## === ipod (Go client): build binary if missing or stale ===

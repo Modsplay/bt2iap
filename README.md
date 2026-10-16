@@ -1,3 +1,5 @@
+> **Modsplay DietPi version:** Includes live Bluetooth song metadata and head-unit playback controls. See [fork setup and capabilities](FORK.md) and [DietPi deployment notes](DIETPI-SETUP.md). The original documentation below describes the upstream project.
+
 # bt2iap
 
 *한국어* · [English](README.en.md)

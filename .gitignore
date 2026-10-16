@@ -10,3 +10,17 @@
 
 # claude-mem / session-scoped agent context
 AGENTS.md
+
+# Generated build outputs
+__pycache__/
+*.pyc
+*.ko
+*.o
+*.mod
+*.mod.c
+.*.cmd
+Module.symvers
+modules.order
+/vendor/ipod/ipod
+
+!go.mod

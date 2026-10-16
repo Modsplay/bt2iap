@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+mode=${1:-}
+[[ $mode == ipod || $mode == serial ]] || { echo 'Usage: bt2iap-usb-mode ipod|serial'; exit 2; }
+[[ $EUID == 0 ]] || { echo 'Run with sudo'; exit 1; }
+units=(audio-loopback.service audio-bridge.service ipod-session.service ipod-gadget.service)
+if [[ $mode == ipod ]]; then
+ systemctl stop serial-getty@ttyGS0.service
+ modprobe -r g_serial
+ if ! systemctl start ipod-gadget.service ipod-session.service; then
+  systemctl stop "${units[@]}" || true
+  modprobe g_serial
+  systemctl start serial-getty@ttyGS0.service
+  echo 'iPod startup failed; restored USB serial.'; exit 1
+ fi
+ systemctl enable "${units[@]}"
+ systemctl start audio-bridge.service audio-loopback.service
+else
+ systemctl disable --now "${units[@]}"
+ modprobe g_serial
+ systemctl enable --now serial-getty@ttyGS0.service
+fi
+python3 - "$mode" <<'PY'
+import pathlib,sys
+p=next(p for p in [pathlib.Path('/boot/firmware/cmdline.txt'),pathlib.Path('/boot/cmdline.txt')] if p.exists())
+tokens=p.read_text().split();out=[]
+for t in tokens:
+ if t.startswith('modules-load='):
+  mods=[m for m in t.split('=',1)[1].split(',') if m!='g_serial']
+  if 'dwc2' not in mods:mods.append('dwc2')
+  if sys.argv[1]=='serial':mods.append('g_serial')
+  t='modules-load='+','.join(mods)
+ if t=='systemd.wants=serial-getty@ttyGS0.service':continue
+ out.append(t)
+if sys.argv[1]=='serial':out.append('systemd.wants=serial-getty@ttyGS0.service')
+p.write_text(' '.join(out)+'\n')
+PY
+if [[ $mode == ipod ]]; then systemctl disable serial-getty@ttyGS0.service; fi
+sync
+echo "USB mode: $mode (persistent). Root filesystem remains writable."
